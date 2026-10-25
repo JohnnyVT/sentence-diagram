@@ -1,0 +1,124 @@
+/* @vt/diagram-engine v0.1.1 — 直角記號樣式
+ * 只有垂直線與水平線。字站在一條橫線上（.dg-head 的 border-bottom）；
+ * ‖ 是 .dg-pos-v 的 6px double 左邊線；| 是 2px solid 左邊線；修飾語靠 .dg-mods 的左邊線垂直往下掛。
+ * 所有顏色走 CSS 變數，宿主覆寫 .dg-root 上的變數即可換主題。
+ */
+
+.dg-root {
+  --dg-line: #2C332C;        /* 骨幹與所有線 */
+  --dg-ink: #1A1F1B;         /* 字 */
+  --dg-muted: #8D9489;       /* 角色標籤、虛線、括號 */
+  --dg-fixed: #8A918A;       /* 已給定的灰字 */
+  --dg-ok: #1F6F5C;  --dg-ok-bg: #E3EFEA;
+  --dg-bad: #A6462C; --dg-bad-bg: #F7E8E2;
+  --dg-armed-bg: #E3EFEA;    /* 手上有字卡時，所有空格的底色 */
+  --dg-hover-bg: #F3EDDC;    /* 已填格 hover（提示可取回） */
+  --dg-font: Spectral, Georgia, "Noto Serif TC", serif;
+  --dg-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --dg-size: 19px;
+  --dg-head-h: 40px;
+
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;                       /* 手機：水平捲動，不縮排版 */
+  color: var(--dg-ink);
+  font-family: var(--dg-font);
+  font-size: var(--dg-size);
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+@media (prefers-color-scheme: dark) {
+  .dg-root:not([data-dg-theme="light"]) {
+    --dg-line: #C2CBBF; --dg-ink: #E9EDE6; --dg-muted: #7C857A; --dg-fixed: #7F887E;
+    --dg-ok: #57B89A; --dg-ok-bg: #1E2E28; --dg-bad: #E08D70; --dg-bad-bg: #32221C;
+    --dg-armed-bg: #1E2E28; --dg-hover-bg: #2A2519;
+  }
+}
+.dg-root[data-dg-theme="dark"] {
+  --dg-line: #C2CBBF; --dg-ink: #E9EDE6; --dg-muted: #7C857A; --dg-fixed: #7F887E;
+  --dg-ok: #57B89A; --dg-ok-bg: #1E2E28; --dg-bad: #E08D70; --dg-bad-bg: #32221C;
+  --dg-armed-bg: #1E2E28; --dg-hover-bg: #2A2519;
+}
+
+/* ---- 容器 ---- */
+.dg-diagram { display: inline-flex; flex-direction: column; gap: 14px; min-width: 100%; }
+.dg-passage { display: flex; flex-direction: column; gap: 26px; }   /* 文章：逐句垂直堆疊 */
+
+/* ---- 骨幹 ---- */
+.dg-clause { display: flex; align-items: flex-start; }
+.dg-cell   { display: flex; flex-direction: column; align-items: stretch; }
+.dg-head {
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+  min-width: 72px; height: var(--dg-head-h); box-sizing: border-box; padding: 0 14px; margin: 0;
+  border: 0; border-bottom: 2px solid var(--dg-line);       /* 字站的那條橫線 */
+  border-radius: 0; background: transparent;
+  font: inherit; color: var(--dg-ink); white-space: nowrap; cursor: default;
+}
+
+/* 收邊：每條骨幹最左最右各一豎線 */
+.dg-clause > .dg-cell:first-child > .dg-head,
+.dg-clause > .dg-cell:first-child > .dg-phrase > .dg-cell:first-child > .dg-head { border-left: 2px solid var(--dg-line); }
+.dg-clause > .dg-cell:last-child > .dg-head,
+.dg-clause > .dg-cell:last-child > .dg-phrase > .dg-cell:last-child > .dg-head { border-right: 2px solid var(--dg-line); }
+
+/* ‖ ——唯一的雙線，只在主詞／述語之間 */
+.dg-pos-v > .dg-head,
+.dg-pos-v > .dg-phrase > .dg-cell:first-child > .dg-head { border-left: 6px double var(--dg-line); }
+
+/* | ——受詞、補語前的單線 */
+.dg-pos-o  > .dg-head, .dg-pos-sc > .dg-head, .dg-pos-oc > .dg-head,
+.dg-pos-o  > .dg-phrase > .dg-cell:first-child > .dg-head,
+.dg-pos-sc > .dg-phrase > .dg-cell:first-child > .dg-head,
+.dg-pos-oc > .dg-phrase > .dg-cell:first-child > .dg-head { border-left: 2px solid var(--dg-line); }
+
+/* 片語（不定詞／動名詞／分詞片語）：一格內自成一列，內部用 | 分隔 */
+.dg-phrase { display: flex; align-items: flex-start; }
+.dg-phrase > .dg-cell + .dg-cell > .dg-head { border-left: 2px solid var(--dg-line); }
+
+/* 子句站在位置上（名詞子句當主詞／受詞）：一格內自成一條完整骨幹 */
+.dg-nest { display: flex; flex-direction: column; align-items: flex-start; padding: 0 6px; }
+.dg-nest-role { font-family: var(--dg-mono); font-size: 10px; letter-spacing: .04em; color: var(--dg-muted); margin-bottom: 2px; }
+
+/* ---- 修飾語：垂直往下掛 ---- */
+.dg-mods {
+  display: flex; flex-direction: column; align-items: flex-start;
+  margin-left: 22px; padding-left: 12px;
+  border-left: 2px solid var(--dg-line);                     /* 垂直幹線 */
+}
+.dg-mod { display: flex; flex-direction: column; align-items: flex-start; margin-top: 8px; }
+.dg-mods .dg-head { min-width: 56px; padding: 0 10px; height: 34px; font-size: .95em; }
+.dg-mods .dg-clause { margin-top: 2px; }
+
+/* 介係詞片語：prep | object */
+.dg-pp { display: flex; align-items: flex-start; }
+.dg-pp > .dg-cell + .dg-cell > .dg-head { border-left: 2px solid var(--dg-line); }
+
+/* 合句：兩條骨幹上下並排，中間虛線格放對等連接詞 */
+.dg-conj { display: flex; align-items: center; gap: 10px; margin: 2px 0 2px 40px; }
+.dg-conj .dg-head { border-left: 2px dashed var(--dg-muted); border-right: 2px dashed var(--dg-muted); height: 34px; min-width: 56px; }
+.dg-tie { width: 28px; border-top: 2px dashed var(--dg-muted); }
+
+/* ---- 字的狀態 ---- */
+.dg-fixed { color: var(--dg-fixed); }
+.dg-slot { cursor: pointer; border-bottom-style: dashed; border-bottom-color: var(--dg-muted); }
+.dg-slot .dg-role { font-family: var(--dg-mono); font-size: 10px; letter-spacing: .04em; color: var(--dg-muted); }
+.dg-slot.dg-filled { border-bottom-style: solid; border-bottom-color: var(--dg-line); }
+.dg-slot.dg-filled:hover { background: var(--dg-hover-bg); }
+.dg-slot.dg-armed, .dg-slot.dg-over { background: var(--dg-armed-bg); }
+.dg-slot:focus-visible { outline: 2px solid var(--dg-ok); outline-offset: -2px; }
+.dg-ok  { background: var(--dg-ok-bg);  color: var(--dg-ok);  border-bottom-color: var(--dg-line); }
+.dg-bad { background: var(--dg-bad-bg); color: var(--dg-bad); border-bottom-color: var(--dg-bad); border-bottom-style: solid; }
+
+/* 省略字：(  input  ) */
+.dg-understood { cursor: text; }
+.dg-paren { color: var(--dg-muted); }
+.dg-input {
+  font: inherit; width: 5.5ch; height: 26px; line-height: 26px; padding: 0;
+  border: 0; border-bottom: 1px dashed var(--dg-muted); background: transparent;
+  color: inherit; text-align: center; outline: none;
+}
+.dg-input:focus { border-bottom-color: var(--dg-ok); }
+.dg-ok .dg-input { color: var(--dg-ok); }
+.dg-bad .dg-input { color: var(--dg-bad); }
+
+@media (prefers-reduced-motion: reduce) { .dg-root * { transition: none !important; } }
